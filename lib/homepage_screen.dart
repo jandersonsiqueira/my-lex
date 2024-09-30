@@ -63,6 +63,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
         title: Text('MyLex'),
         actions: <Widget>[
           IconButton(
+            icon: Icon(Icons.person_add),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/cadastro'); // Tela de cadastro de usuários
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/login'); // Retorna para a tela de login

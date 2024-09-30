@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cadastro.dart';
 import 'login_screen.dart';
 import 'homepage_screen.dart';
 import 'agenda_screen.dart';
@@ -34,6 +35,7 @@ class MyLexApp extends StatelessWidget {
         '/agenda': (context) => AgendaScreen(),
         '/clientes': (context) => ClientesScreen(),
         '/processos': (context) => ProcessosScreen(),
+        '/cadastro': (context) => CadastroScreen(),
       },
     );
   }
