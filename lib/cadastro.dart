@@ -35,7 +35,25 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   // Função para adicionar um novo usuário
   Future<void> _addUsuario(String user, String password) async {
-
+    
+    final response = await http.post(
+      Uri.parse('$LINK_BASE/login/'),
+      body: jsonEncode({
+        'user': user,
+        'password': password,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      _loadUsuarios();
+      _formKey.currentState?.reset();
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Usuário adicionado com sucesso!')),
+      );
+    } else {
+      print('Erro ao adicionar usuário: ${response.statusCode}');
+    }
   }
 
   // Função para editar um usuário
