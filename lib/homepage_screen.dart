@@ -93,6 +93,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
@@ -107,6 +108,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
             label: 'Processos',
           ),
         ],
+        selectedItemColor: Color(0xFFE7D49E),
+        unselectedItemColor: Color(0xFFE7D49E),
+        backgroundColor: Colors.black,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushNamed(context, '/agenda');
