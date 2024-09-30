@@ -15,7 +15,17 @@ class MyLexApp extends StatelessWidget {
     return MaterialApp(
       title: 'MyLex App',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.black, // Define a cor primária para o app
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.black, // Define a cor de fundo do AppBar
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20), // Cor e estilo do texto no AppBar
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            primary: Colors.black, // Cor de fundo do ElevatedButton
+            onPrimary: Colors.white, // Cor do texto do botão
+          ),
+        ),
       ),
       initialRoute: '/login', // Rota inicial
       routes: {
