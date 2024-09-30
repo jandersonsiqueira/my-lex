@@ -58,7 +58,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   // Função para editar um usuário
   Future<void> _editUsuario(String userId, String user, String password) async {
-    
+
     final response = await http.put(
       Uri.parse('$LINK_BASE/login/$userId'),
       body: jsonEncode({
@@ -79,7 +79,17 @@ class _CadastroScreenState extends State<CadastroScreen> {
   }
 
   Future<void> _deleteUsuario(String userId) async {
-
+    
+    final response = await http.delete(Uri.parse('$LINK_BASE/login/$userId'));
+    if (response.statusCode == 200) {
+      _loadUsuarios();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Usuário removido com sucesso!')),
+      );
+    } else {
+      // Tratar erros de requisição
+      print('Erro ao excluir usuário: ${response.statusCode}');
+    }
   }
 
   // Modal para adicionar ou editar usuários
