@@ -125,77 +125,153 @@ class _ClientesScreenState extends State<ClientesScreen> {
               key: _formKey,
               child: Padding(
                 padding: MediaQuery.of(context).viewInsets,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nomeCompletoController,
-                    decoration: InputDecoration(labelText: 'Nome Completo'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira o nome completo';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(labelText: 'Email'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira o email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Email inválido';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _telefoneController,
-                    decoration: InputDecoration(labelText: 'Telefone'),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _processoController,
-                    decoration: InputDecoration(labelText: 'Processo'),
-                  ),
-                  SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // Se o clientId for nulo, é uma adição
-                        if (clientId == null) {
-                          _addClient(
-                            _nomeCompletoController.text,
-                            _emailController.text,
-                            _telefoneController.text,
-                            _processoController.text,
-                          );
-                        } else {
-                          // Caso contrário, é uma edição
-                          _editClient(
-                            clientId,
-                            _nomeCompletoController.text,
-                            _emailController.text,
-                            _telefoneController.text,
-                            _processoController.text,
-                          );
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nomeCompletoController,
+                      decoration: InputDecoration(labelText: 'Nome Completo'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira o nome completo';
                         }
-                      }
-                    },
-                    child: Text(clientId == null ? 'Adicionar' : 'Editar'),
-                  ),
-                ],
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(labelText: 'Email'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira o email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Email inválido';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _telefoneController,
+                      decoration: InputDecoration(labelText: 'Telefone'),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _processoController,
+                      decoration: InputDecoration(labelText: 'Processo'),
+                    ),
+                    SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          // Se o clientId for nulo, é uma adição
+                          if (clientId == null) {
+                            _addClient(
+                              _nomeCompletoController.text,
+                              _emailController.text,
+                              _telefoneController.text,
+                              _processoController.text,
+                            );
+                          } else {
+                            // Caso contrário, é uma edição
+                            _editClient(
+                              clientId,
+                              _nomeCompletoController.text,
+                              _emailController.text,
+                              _telefoneController.text,
+                              _processoController.text,
+                            );
+                          }
+                        }
+                      },
+                      child: Text(clientId == null ? 'Adicionar' : 'Editar'),
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
           ),
         );
       },
     );
   }
+
+  void _generateReport() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Relatório de Clientes', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              children: clientes.map((cliente) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cliente['nomeCompleto'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.black, // Cor do nome
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        _buildInfoRow(Icons.email, cliente['email'], 'E-mail'),
+                        SizedBox(height: 4),
+                        _buildInfoRow(Icons.phone, cliente['telefone'], 'Telefone'),
+                        SizedBox(height: 4),
+                        _buildInfoRow(Icons.business, cliente['processo'], 'Processo'),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Fechar', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Função para criar uma linha de informações com ícone
+  Widget _buildInfoRow(IconData icon, String info, String title) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.black),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            info,
+            style: TextStyle(fontSize: 16, color: Colors.black),
+          ),
+        ),
+        Text(
+          title,
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -208,14 +284,38 @@ class _ClientesScreenState extends State<ClientesScreen> {
           ? Center(child: CircularProgressIndicator())
           : Column(
         children: [
-          // Botão para adicionar um novo cliente
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                _showClientModal();
-              },
-              child: Text('Adicionar Cliente'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _showClientModal();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add), // Ícone de adicionar
+                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
+                      Text('Adicionar Cliente'),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _generateReport();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.print), // Ícone de adicionar
+                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
+                      Text('Gerar Relatório'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // Tabela para listar os clientes

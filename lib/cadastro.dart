@@ -168,6 +168,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Cadastro de Usuários'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/homepage');
+          },
+        ),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())

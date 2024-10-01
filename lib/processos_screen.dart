@@ -109,6 +109,82 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
     }
   }
 
+  void _generateReport() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Relatório de Processos', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              children: processos.map((processo) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          processo['categoria'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        _buildInfoRow(Icons.check_circle, processo['status'], 'Status'),
+                        SizedBox(height: 4),
+                        _buildInfoRow(Icons.note, processo['notas'], 'Notas'),
+                        SizedBox(height: 4),
+                        _buildInfoRow(Icons.person, processo['cliente'], 'Cliente'),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Fechar', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Função para criar uma linha de informações com ícone
+  Widget _buildInfoRow(IconData icon, String info, String title) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.black),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            info,
+            style: TextStyle(fontSize: 16, color: Colors.black),
+          ),
+        ),
+        Text(
+          title,
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+
   // Modal para adicionar ou editar processos
   void _showProcessoModal(
       [String? processoId,
@@ -236,14 +312,39 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
           ? Center(child: CircularProgressIndicator())
           : Column(
         children: [
-          // Botão para adicionar um novo processo
+          // Row para colocar os botões lado a lado
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                _showProcessoModal();
-              },
-              child: Text('Adicionar Processo'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espaço entre os botões
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _showProcessoModal();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add), // Ícone de adicionar
+                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
+                      Text('Adicionar Processo'),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _generateReport();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.print), // Ícone de adicionar
+                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
+                      Text('Gerar Relatório'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // Tabela para listar os processos
@@ -259,6 +360,7 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
+                        icon: Icon(Icons.edit),
                         onPressed: () {
                           _showProcessoModal(
                             processo['_id'],
@@ -268,13 +370,12 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
                             processo['cliente'],
                           );
                         },
-                        icon: Icon(Icons.edit),
                       ),
                       IconButton(
+                        icon: Icon(Icons.delete),
                         onPressed: () {
                           _deleteProcesso(processo['_id']);
                         },
-                        icon: Icon(Icons.delete),
                       ),
                     ],
                   ),
