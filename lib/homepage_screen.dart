@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
+
 import 'constantes_arbitraries.dart';
 import 'login_screen.dart';
 
@@ -12,13 +14,16 @@ class HomePageScreen extends StatefulWidget {
 
 class _HomePageScreenState extends State<HomePageScreen> {
   List<SalesData> chartData = [];
+  List<dynamic> events = [];
 
   @override
   void initState() {
     super.initState();
     fetchProcessos();
+    fetchEvents();
   }
 
+  // Função para buscar os processos e gerar o gráfico
   Future<void> fetchProcessos() async {
     final response = await http.get(Uri.parse('$LINK_BASE/processos/'));
 
@@ -42,6 +47,34 @@ class _HomePageScreenState extends State<HomePageScreen> {
       });
     } else {
       throw Exception('Failed to load processos');
+    }
+  }
+
+// Função para buscar eventos do dia
+  Future<void> fetchEvents() async {
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+
+    final response = await http.get(Uri.parse('$LINK_BASE/calendar/'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> allEvents = jsonDecode(response.body);
+
+      // Nova lista para armazenar os eventos do dia
+      List<dynamic> eventsForToday = [];
+
+      // Usando 'for' loop para filtrar os eventos
+      for (var event in allEvents) {
+        String eventDate = event['date'].toString().substring(0, 10);
+
+        // Se a data do evento for igual à data formatada, adiciona à lista de eventos do dia
+        if (eventDate == formattedDate) {
+          events.add(event);
+        }
+      }
+
+    } else {
+      throw Exception('Erro ao buscar eventos');
     }
   }
 
@@ -87,6 +120,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         child: Column(
           children: <Widget>[
             Expanded(
+              flex: 4,
               child: SfCircularChart(
                 title: ChartTitle(text: 'Seus processos da semana'),
                 legend: Legend(isVisible: true),
@@ -100,6 +134,21 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   )
                 ],
               ),
+            ),
+            // Eventos do dia
+            Expanded(
+              flex: 1,
+              child: events.isNotEmpty
+                  ? ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text('Seus eventos de hoje'),
+                    subtitle: Text(events[index]['title']),
+                  );
+                },
+              )
+                  : Center(child: Text('Sem eventos hoje')),
             ),
           ],
         ),
