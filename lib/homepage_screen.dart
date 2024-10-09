@@ -63,6 +63,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
         title: Text('MyLex'),
         actions: <Widget>[
           IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/chatbot'); // Tela do chatbot
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.person_add),
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/cadastro'); // Tela de cadastro de usuários
