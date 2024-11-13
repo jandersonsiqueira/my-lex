@@ -395,43 +395,52 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Campo de pesquisa
-                      Expanded(
-                        child: TextField(
-                          onChanged: (value) {
-                            setState(() {
-                              searchText = value;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Pesquisar por Categoria',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
+                      TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            searchText = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Pesquisar por Categoria',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
                         ),
                       ),
-                      SizedBox(width: 16),
+                      SizedBox(height: 16),
                       // Filtro por status
-                      DropdownButton<String>(
-                        value: selectedStatusFilter,
-                        hint: Text('Status'),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedStatusFilter = newValue;
-                          });
-                        },
-                        items: <String>['Em andamento', 'Concluído', 'Todos']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value == 'Todos' ? null : value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedStatusFilter,
+                          hint: Text('Status'),
+                          isExpanded: true,
+                          underline: SizedBox(), // Remove a linha padrão do dropdown
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedStatusFilter = newValue;
+                            });
+                          },
+                          items: <String>['Em andamento', 'Concluído', 'Todos']
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value == 'Todos' ? null : value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      )
                     ],
                   ),
                   SizedBox(height: 16),
