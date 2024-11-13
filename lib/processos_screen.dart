@@ -15,6 +15,8 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   final _formKey = GlobalKey<FormState>(); // Chave para o formulário
   List<dynamic> favoritos = []; // Lista para armazenar processos favoritos
   bool mostrarFavoritos = false; // Indicador para filtrar favoritos
+  String searchText = ''; // Texto de pesquisa
+  String? selectedStatusFilter; // Filtro de status selecionado
 
   @override
   void initState() {
@@ -55,10 +57,30 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   }
 
   List<dynamic> _getProcessosFiltrados() {
-    if (mostrarFavoritos) {
-      return processos.where((processo) => processo['isFavorite']).toList();
+    List<dynamic> filteredProcessos = processos;
+
+    // Filtrar pelo status selecionado
+    if (selectedStatusFilter != null && selectedStatusFilter!.isNotEmpty) {
+      filteredProcessos = filteredProcessos.where((processo) {
+        return processo['status'].toString().toLowerCase() == selectedStatusFilter!.toLowerCase();
+      }).toList();
     }
-    return processos;
+
+    // Filtrar pelo texto de pesquisa
+    if (searchText.isNotEmpty) {
+      filteredProcessos = filteredProcessos.where((processo) {
+        final nomeProcesso = processo['categoria'].toString().toLowerCase();
+        final searchLower = searchText.toLowerCase();
+        return nomeProcesso.contains(searchLower);
+      }).toList();
+    }
+
+    // Se mostrar favoritos estiver ativado
+    if (mostrarFavoritos) {
+      filteredProcessos = filteredProcessos.where((processo) => processo['isFavorite']).toList();
+    }
+
+    return filteredProcessos;
   }
 
   // Função para adicionar um novo processo
@@ -369,36 +391,81 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
           // Row para colocar os botões lado a lado
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espaço entre os botões
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _showProcessoModal();
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Icon(Icons.add), // Ícone de adicionar
-                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
-                      Text('Adicionar Processo'),
+                      // Campo de pesquisa
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              searchText = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Pesquisar por Categoria',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      // Filtro por status
+                      DropdownButton<String>(
+                        value: selectedStatusFilter,
+                        hint: Text('Status'),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedStatusFilter = newValue;
+                          });
+                        },
+                        items: <String>['Em andamento', 'Concluído', 'Todos']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value == 'Todos' ? null : value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    _generateReport();
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.print), // Ícone de adicionar
-                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
-                      Text('Gerar Relatório'),
+                      ElevatedButton(
+                        onPressed: () {
+                          _showProcessoModal();
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.add),
+                            SizedBox(width: 8),
+                            Text('Adicionar Processo'),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _generateReport();
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.print),
+                            SizedBox(width: 8),
+                            Text('Gerar Relatório'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // Tabela para listar os processos
