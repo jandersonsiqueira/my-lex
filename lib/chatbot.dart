@@ -19,7 +19,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('https://api-gemini-1ck0.onrender.com/chat'),
+      Uri.parse('https://api-gemini-9uiw.onrender.com/chat'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'pergunta': message}),
     );
