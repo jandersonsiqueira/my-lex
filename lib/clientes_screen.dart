@@ -13,6 +13,9 @@ class _ClientesScreenState extends State<ClientesScreen> {
   List<dynamic> clientes = []; // Lista para armazenar os clientes
   bool isLoading = true; // Indicador de carregamento
   final _formKey = GlobalKey<FormState>(); // Chave para o formulário
+  bool showOnlyFavorites = false; // Variável para controlar o filtro de favoritos
+  TextEditingController _searchController = TextEditingController(); // Controlador de texto para o campo de pesquisa
+  String searchQuery = ""; // Query de pesquisa
 
   @override
   void initState() {
@@ -25,13 +28,39 @@ class _ClientesScreenState extends State<ClientesScreen> {
     final response = await http.get(Uri.parse('$LINK_BASE/cliente/'));
     if (response.statusCode == 200) {
       setState(() {
-        clientes = jsonDecode(response.body);
+        // Adicionando o campo 'favorito' localmente
+        clientes = jsonDecode(response.body).map((cliente) {
+          cliente['favorito'] = false; // Inicialmente, nenhum cliente é favorito
+          return cliente;
+        }).toList();
         isLoading = false;
       });
     } else {
       // Tratar erros de requisição
       print('Erro ao carregar clientes: ${response.statusCode}');
     }
+  }
+
+  void _toggleFavorite(String clientId) {
+    setState(() {
+      // Alterna o campo 'favorito' do cliente
+      final cliente = clientes.firstWhere((c) => c['_id'] == clientId);
+      cliente['favorito'] = !cliente['favorito'];
+    });
+  }
+
+  List<dynamic> getFilteredClients() {
+    if (searchQuery.isEmpty) {
+      // Retorna todos os clientes se não houver texto de pesquisa
+      return clientes;
+    }
+
+    // Filtra os clientes pelo nome
+    return clientes.where((cliente) {
+      final nomeCompleto = cliente['nomeCompleto'].toLowerCase();
+      final query = searchQuery.toLowerCase();
+      return nomeCompleto.contains(query);
+    }).toList();
   }
 
   // Função para adicionar um novo cliente
@@ -278,14 +307,57 @@ class _ClientesScreenState extends State<ClientesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Clientes'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                showOnlyFavorites = !showOnlyFavorites;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              shadowColor: Colors.transparent,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  showOnlyFavorites ? Icons.favorite : Icons.favorite_border,
+                  color: showOnlyFavorites ? Colors.red : Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  showOnlyFavorites ? 'Todos' : 'Favoritos',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       resizeToAvoidBottomInset: true,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : Column(
         children: [
+          // Campo de Pesquisa
           Padding(
             padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar Cliente',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          // Botões para adicionar cliente e gerar relatório
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -318,18 +390,34 @@ class _ClientesScreenState extends State<ClientesScreen> {
               ],
             ),
           ),
-          // Tabela para listar os clientes
+          // Tabela para listar os clientes filtrados
           Expanded(
             child: ListView.builder(
-              itemCount: clientes.length,
+              itemCount: getFilteredClients().length,
               itemBuilder: (context, index) {
-                final cliente = clientes[index];
+                final cliente = getFilteredClients()[index];
+
+                // Aplica o filtro para exibir apenas favoritos se necessário
+                if (showOnlyFavorites && !cliente['favorito']) {
+                  return Container(); // Não renderiza clientes que não são favoritos
+                }
+
                 return ListTile(
                   title: Text(cliente['nomeCompleto']),
                   subtitle: Text(cliente['email']),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(
+                          cliente['favorito']
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color:
+                          cliente['favorito'] ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () => _toggleFavorite(cliente['_id']),
+                      ),
                       IconButton(
                         onPressed: () {
                           _showClientModal(

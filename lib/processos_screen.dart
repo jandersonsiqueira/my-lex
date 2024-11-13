@@ -13,6 +13,10 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   List<dynamic> processos = []; // Lista para armazenar os processos
   bool isLoading = true; // Indicador de carregamento
   final _formKey = GlobalKey<FormState>(); // Chave para o formulário
+  List<dynamic> favoritos = []; // Lista para armazenar processos favoritos
+  bool mostrarFavoritos = false; // Indicador para filtrar favoritos
+  String searchText = ''; // Texto de pesquisa
+  String? selectedStatusFilter; // Filtro de status selecionado
 
   @override
   void initState() {
@@ -26,12 +30,57 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
     if (response.statusCode == 200) {
       setState(() {
         processos = jsonDecode(response.body);
+        // Marcar processos favoritos
+        processos.forEach((processo) {
+          processo['isFavorite'] = favoritos.any((fav) => fav['_id'] == processo['_id']);
+        });
         isLoading = false;
       });
     } else {
       // Tratar erros de requisição
       print('Erro ao carregar processos: ${response.statusCode}');
     }
+  }
+
+  void _toggleFavorito(Map<String, dynamic> processo) {
+    setState(() {
+      if (processo['isFavorite']) {
+        // Remover dos favoritos
+        favoritos.removeWhere((fav) => fav['_id'] == processo['_id']);
+      } else {
+        // Adicionar aos favoritos
+        favoritos.add(processo);
+      }
+      // Alternar estado de favorito
+      processo['isFavorite'] = !processo['isFavorite'];
+    });
+  }
+
+  List<dynamic> _getProcessosFiltrados() {
+    List<dynamic> filteredProcessos = processos;
+
+    // Filtrar pelo status selecionado
+    if (selectedStatusFilter != null && selectedStatusFilter!.isNotEmpty) {
+      filteredProcessos = filteredProcessos.where((processo) {
+        return processo['status'].toString().toLowerCase() == selectedStatusFilter!.toLowerCase();
+      }).toList();
+    }
+
+    // Filtrar pelo texto de pesquisa
+    if (searchText.isNotEmpty) {
+      filteredProcessos = filteredProcessos.where((processo) {
+        final nomeProcesso = processo['categoria'].toString().toLowerCase();
+        final searchLower = searchText.toLowerCase();
+        return nomeProcesso.contains(searchLower);
+      }).toList();
+    }
+
+    // Se mostrar favoritos estiver ativado
+    if (mostrarFavoritos) {
+      filteredProcessos = filteredProcessos.where((processo) => processo['isFavorite']).toList();
+    }
+
+    return filteredProcessos;
   }
 
   // Função para adicionar um novo processo
@@ -305,7 +354,34 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Processos'),
+        title: const Text('Processos'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                mostrarFavoritos = !mostrarFavoritos;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              //backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  mostrarFavoritos ? Icons.favorite : Icons.favorite_border,
+                  color: mostrarFavoritos ? Colors.red : Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  mostrarFavoritos ? 'Todos' : 'Favoritos',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       resizeToAvoidBottomInset: true,
       body: isLoading
@@ -315,50 +391,113 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
           // Row para colocar os botões lado a lado
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espaço entre os botões
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _showProcessoModal();
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.add), // Ícone de adicionar
-                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
-                      Text('Adicionar Processo'),
+                      // Campo de pesquisa
+                      TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            searchText = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Pesquisar por Categoria',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      // Filtro por status
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedStatusFilter,
+                          hint: Text('Status'),
+                          isExpanded: true,
+                          underline: SizedBox(), // Remove a linha padrão do dropdown
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedStatusFilter = newValue;
+                            });
+                          },
+                          items: <String>['Em andamento', 'Concluído', 'Todos']
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value == 'Todos' ? null : value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      )
                     ],
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    _generateReport();
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.print), // Ícone de adicionar
-                      SizedBox(width: 8), // Espaçamento entre o ícone e o texto
-                      Text('Gerar Relatório'),
+                      ElevatedButton(
+                        onPressed: () {
+                          _showProcessoModal();
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.add),
+                            SizedBox(width: 8),
+                            Text('Adicionar Processo'),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _generateReport();
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.print),
+                            SizedBox(width: 8),
+                            Text('Gerar Relatório'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // Tabela para listar os processos
           Expanded(
             child: ListView.builder(
-              itemCount: processos.length,
+              itemCount: _getProcessosFiltrados().length,
               itemBuilder: (context, index) {
-                final processo = processos[index];
+                final processo = _getProcessosFiltrados()[index];
                 return ListTile(
                   title: Text(processo['categoria']),
                   subtitle: Text(processo['status']),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(
+                          processo['isFavorite'] ? Icons.favorite : Icons.favorite_border,
+                          color: processo['isFavorite'] ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () {
+                          _toggleFavorito(processo);
+                        },
+                      ),
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
