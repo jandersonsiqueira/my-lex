@@ -13,6 +13,8 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   List<dynamic> processos = []; // Lista para armazenar os processos
   bool isLoading = true; // Indicador de carregamento
   final _formKey = GlobalKey<FormState>(); // Chave para o formulário
+  List<dynamic> favoritos = []; // Lista para armazenar processos favoritos
+  bool mostrarFavoritos = false; // Indicador para filtrar favoritos
 
   @override
   void initState() {
@@ -26,12 +28,37 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
     if (response.statusCode == 200) {
       setState(() {
         processos = jsonDecode(response.body);
+        // Marcar processos favoritos
+        processos.forEach((processo) {
+          processo['isFavorite'] = favoritos.any((fav) => fav['_id'] == processo['_id']);
+        });
         isLoading = false;
       });
     } else {
       // Tratar erros de requisição
       print('Erro ao carregar processos: ${response.statusCode}');
     }
+  }
+
+  void _toggleFavorito(Map<String, dynamic> processo) {
+    setState(() {
+      if (processo['isFavorite']) {
+        // Remover dos favoritos
+        favoritos.removeWhere((fav) => fav['_id'] == processo['_id']);
+      } else {
+        // Adicionar aos favoritos
+        favoritos.add(processo);
+      }
+      // Alternar estado de favorito
+      processo['isFavorite'] = !processo['isFavorite'];
+    });
+  }
+
+  List<dynamic> _getProcessosFiltrados() {
+    if (mostrarFavoritos) {
+      return processos.where((processo) => processo['isFavorite']).toList();
+    }
+    return processos;
   }
 
   // Função para adicionar um novo processo
@@ -305,7 +332,34 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Processos'),
+        title: const Text('Processos'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                mostrarFavoritos = !mostrarFavoritos;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              //backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  mostrarFavoritos ? Icons.favorite : Icons.favorite_border,
+                  color: mostrarFavoritos ? Colors.red : Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  mostrarFavoritos ? 'Todos' : 'Favoritos',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       resizeToAvoidBottomInset: true,
       body: isLoading
@@ -350,15 +404,24 @@ class _ProcessosScreenState extends State<ProcessosScreen> {
           // Tabela para listar os processos
           Expanded(
             child: ListView.builder(
-              itemCount: processos.length,
+              itemCount: _getProcessosFiltrados().length,
               itemBuilder: (context, index) {
-                final processo = processos[index];
+                final processo = _getProcessosFiltrados()[index];
                 return ListTile(
                   title: Text(processo['categoria']),
                   subtitle: Text(processo['status']),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(
+                          processo['isFavorite'] ? Icons.favorite : Icons.favorite_border,
+                          color: processo['isFavorite'] ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () {
+                          _toggleFavorito(processo);
+                        },
+                      ),
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
