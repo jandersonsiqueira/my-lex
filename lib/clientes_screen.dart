@@ -13,6 +13,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
   List<dynamic> clientes = []; // Lista para armazenar os clientes
   bool isLoading = true; // Indicador de carregamento
   final _formKey = GlobalKey<FormState>(); // Chave para o formulário
+  bool showOnlyFavorites = false; // Variável para controlar o filtro de favoritos
 
   @override
   void initState() {
@@ -25,7 +26,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
     final response = await http.get(Uri.parse('$LINK_BASE/cliente/'));
     if (response.statusCode == 200) {
       setState(() {
-        clientes = jsonDecode(response.body);
+        // Adicionando o campo 'favorito' localmente
+        clientes = jsonDecode(response.body).map((cliente) {
+          cliente['favorito'] = false; // Inicialmente, nenhum cliente é favorito
+          return cliente;
+        }).toList();
         isLoading = false;
       });
     } else {
@@ -33,6 +38,15 @@ class _ClientesScreenState extends State<ClientesScreen> {
       print('Erro ao carregar clientes: ${response.statusCode}');
     }
   }
+
+  void _toggleFavorite(String clientId) {
+    setState(() {
+      // Alterna o campo 'favorito' do cliente
+      final cliente = clientes.firstWhere((c) => c['_id'] == clientId);
+      cliente['favorito'] = !cliente['favorito'];
+    });
+  }
+
 
   // Função para adicionar um novo cliente
   Future<void> _addClient(
@@ -278,6 +292,33 @@ class _ClientesScreenState extends State<ClientesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Clientes'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                showOnlyFavorites = !showOnlyFavorites;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              //backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  showOnlyFavorites ? Icons.favorite : Icons.favorite_border,
+                  color: showOnlyFavorites ? Colors.red : Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  showOnlyFavorites ? 'Todos' : 'Favoritos',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       resizeToAvoidBottomInset: true,
       body: isLoading
@@ -324,12 +365,25 @@ class _ClientesScreenState extends State<ClientesScreen> {
               itemCount: clientes.length,
               itemBuilder: (context, index) {
                 final cliente = clientes[index];
+
+                // Aplica o filtro para exibir apenas favoritos se necessário
+                if (showOnlyFavorites && !cliente['favorito']) {
+                  return Container(); // Não renderiza clientes que não são favoritos
+                }
+
                 return ListTile(
                   title: Text(cliente['nomeCompleto']),
                   subtitle: Text(cliente['email']),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(
+                          cliente['favorito'] ? Icons.favorite : Icons.favorite_border,
+                          color: cliente['favorito'] ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () => _toggleFavorite(cliente['_id']),
+                      ),
                       IconButton(
                         onPressed: () {
                           _showClientModal(
